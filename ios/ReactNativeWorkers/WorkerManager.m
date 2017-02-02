@@ -2,7 +2,6 @@
 #import "Worker.h"
 #include <stdlib.h>
 #import <JavaScriptCore/JavaScriptCore.h>
-#import "RCTBridge.h"
 #import "RCTBridge+Private.h"
 #import "RCTEventDispatcher.h"
 #import "RCTBundleURLProvider.h"
