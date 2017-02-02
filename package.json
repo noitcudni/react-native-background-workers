@@ -1,0 +1,16 @@
+{
+  "name": "react-native-background-worker",
+  "version": "1.0.0",
+  "description": "JS workers for iOS",
+  "main": "index.js",
+  "dependencies": {
+    "invariant": "^2.2.2",
+    "warning": "^3.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Lih Chen <lihster@gmail.com>",
+  "license": "ISC"
+}
