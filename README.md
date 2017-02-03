@@ -14,6 +14,6 @@ Add the following to your react native app's Build Phases -> Bundle React Native
 
 ```
 export NODE_BINARY=node
-../node_modules/react-native-background-worker/react-native-workers.sh ;; <-- ADD THIS LINE
+../node_modules/react-native-background-workers/react-native-workers.sh # <-- ADD THIS LINE
 ../node_modules/react-native/packager/react-native-xcode.sh
 ```
