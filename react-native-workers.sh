@@ -31,7 +31,7 @@ case "$CONFIGURATION" in
 esac
 
 # Path to react-native folder inside node_modules
-REACT_NATIVE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/node_modules/react-native" && pwd)"
+REACT_NATIVE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../react-native" && pwd)"
 
 # Xcode project file for React Native apps is located in ios/ subfolder
 cd ..
