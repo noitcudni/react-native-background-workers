@@ -109,7 +109,7 @@ RCT_EXPORT_METHOD(postWorkerMessage:(NSString *)workerId message:(NSString *)mes
 }
 
 - (NSString*) getModuleId: (NSString*) jsBundleStr {
-  NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"require\\(([0-9]+)"
+  NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@";require\\(([0-9]+)\\);"
                                                                          options:NSRegularExpressionCaseInsensitive error:nil];
   NSArray *matches = [regex matchesInString:jsBundleStr options:0 range:NSMakeRange(0, [jsBundleStr length])];
   NSRange group1 = [matches[0] rangeAtIndex: 1];
