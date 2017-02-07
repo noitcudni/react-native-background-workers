@@ -12,7 +12,7 @@ export default class Worker
       throw new Error("Invalid worker path. Only js files are supported");
     }
 
-    this.id = WorkerManager.startWorker(jsPath.replace(".js", ""))
+    this.id = WorkerManager.initJsContext()
       .then(id => {
         const moduleEvt = new NativeEventEmitter(WorkerManager);
         moduleEvt.addListener(id, (message) => {
@@ -22,6 +22,8 @@ export default class Worker
         return id;
       })
       .catch(err => { throw new Error(err); });
+
+    this.id.then(id => WorkerManager.startWorker(id, jsPath.replace(".js", "")));
   }
 
   postMessage(message) {

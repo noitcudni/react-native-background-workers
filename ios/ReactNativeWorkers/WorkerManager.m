@@ -13,65 +13,57 @@ static NSMutableArray *preallocatedWorkerIds;
 
 RCT_EXPORT_MODULE();
 
-RCT_REMAP_METHOD(startWorker,
-                 name: (NSString *)name
+RCT_REMAP_METHOD(initJsContext,
                  resolver:(RCTPromiseResolveBlock)resolve
                  rejecter:(RCTPromiseRejectBlock)reject)
 {
-  if (workers == nil) {
-    workers = [[NSMutableDictionary alloc] init];
-  }
+    if (workers == nil) {
+        workers = [[NSMutableDictionary alloc] init];
+    }
 
 
-  NSString *workerId = [[NSUUID UUID] UUIDString];
+    NSString *workerId = [[NSUUID UUID] UUIDString];
 
-  NSURL *workerURL = [[RCTBundleURLProvider sharedSettings] jsBundleURLForBundleRoot:name fallbackResource:name];
+    JSContext *context = [[JSContext alloc] initWithVirtualMachine:[[JSVirtualMachine alloc] init]];
 
-/*
-  NSDictionary *args = @{@"id" : workerId,
-                        @"workerURL" : workerURL};
-*/
-  // [self performSelectorInBackground:@selector(doLoadJs:) withObject: workerURL];
+    // setup callback from js->objective c
+    context[@"postMessage"] = ^(NSString *message) {
+        NSLog(@"main js got a message from js : %@", message);
+        [self sendEventWithName:workerId body:message];
+    };
 
-  NSLog(@"starting Worker %@", [workerURL absoluteString]);
-  JSContext *context = [[JSContext alloc] initWithVirtualMachine:[[JSVirtualMachine alloc] init]];
-  NSString *jsString = [NSString stringWithContentsOfURL:workerURL encoding:NSUTF8StringEncoding error:nil];
+    // Redirect console.log statements to xcode
+    [context evaluateScript:@"var console = {}"];
+    context[@"console"][@"log"] = ^(NSString *message) {
+        NSLog(@"Javascript log: %@", message);
+    };
 
-  // setup callback from js->objective c
-  context[@"postMessage"] = ^(NSString *message) {
-    NSLog(@"main js got a message from js : %@", message);
-    [self sendEventWithName:workerId body:message];
-  };
+    Worker *w = [[Worker alloc] init];
+    [w setWorkerId: workerId];
+    [w setContext: context];
+    [workers setObject:w forKey:workerId];
 
-  // Redirect console.log statements to xcode
-  [context evaluateScript:@"var console = {}"];
-  context[@"console"][@"log"] = ^(NSString *message) {
-    NSLog(@"Javascript log: %@", message);
-  };
-  [context evaluateScript:jsString];
-
-
-  NSString *moduleIdStr = [self getModuleId:jsString];
-
-  Worker *w = [[Worker alloc] init];
-  [w setModuleId: moduleIdStr];
-  [w setWorkerId: workerId];
-  [w setContext: context];
-  [workers setObject:w forKey:workerId];
-
-  resolve(workerId);
+    resolve(workerId);
 }
 
 
-// - (void) doLoadJs:(NSURL *)workerURL {
-//   RCTBridge *workerBridge = [[RCTBridge alloc] initWithBundleURL:workerURL
-//                                                   moduleProvider:nil
-//                                                    launchOptions:nil];
-//   WorkerSelfManager *workerSelf = [workerBridge moduleForName:@"WorkerSelfManager"];
-//   [workerSelf setWorkerId:123];
-//   // [workerSelf setParentBridge:self.bridge];
-//   [workers setObject:workerBridge forKey:[NSNumber numberWithInt:123]];
-// }
+RCT_EXPORT_METHOD(startWorker:(NSString *) workerId
+                  name: (NSString *)name)
+{
+  NSURL *workerURL = [[RCTBundleURLProvider sharedSettings] jsBundleURLForBundleRoot:name fallbackResource:name];
+
+  NSLog(@"starting Worker %@", [workerURL absoluteString]);
+  NSString *jsString = [NSString stringWithContentsOfURL:workerURL encoding:NSUTF8StringEncoding error:nil];
+  Worker *w = workers[workerId];
+
+  NSString *moduleIdStr = [self getModuleId:jsString];
+
+  [w setModuleId: moduleIdStr];
+  [workers setObject:w forKey:workerId];
+
+  [[w context] evaluateScript:jsString];
+}
+
 
 RCT_EXPORT_METHOD(stopWorker:(NSString*) workerId)
 {
