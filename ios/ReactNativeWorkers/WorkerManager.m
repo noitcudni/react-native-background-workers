@@ -37,6 +37,12 @@ RCT_REMAP_METHOD(startWorker,
   JSContext *context = [[JSContext alloc] initWithVirtualMachine:[[JSVirtualMachine alloc] init]];
   NSString *jsString = [NSString stringWithContentsOfURL:workerURL encoding:NSUTF8StringEncoding error:nil];
 
+  // setup callback from js->objective c
+  context[@"postMessage"] = ^(NSString *message) {
+    NSLog(@"main js got a message from js : %@", message);
+    [self sendEventWithName:workerId body:message];
+  };
+
   // Redirect console.log statements to xcode
   [context evaluateScript:@"var console = {}"];
   context[@"console"][@"log"] = ^(NSString *message) {
@@ -44,11 +50,6 @@ RCT_REMAP_METHOD(startWorker,
   };
   [context evaluateScript:jsString];
 
-  // setup callback from js->objective c
-  context[@"postMessage"] = ^(NSString *message) {
-    NSLog(@"main js got a message from js : %@", message);
-    [self sendEventWithName:workerId body:message];
-  };
 
   NSString *moduleIdStr = [self getModuleId:jsString];
 
