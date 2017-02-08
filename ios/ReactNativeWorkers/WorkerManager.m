@@ -32,11 +32,24 @@ RCT_REMAP_METHOD(initJsContext,
         [self sendEventWithName:workerId body:message];
     };
 
-    // Redirect console.log statements to xcode
+    // Redirect console.log, console.warn, and console.error statements to xcode
     [context evaluateScript:@"var console = {}"];
     context[@"console"][@"log"] = ^(NSString *message) {
         NSLog(@"Javascript log: %@", message);
     };
+    context[@"console"][@"warn"] = ^(NSString *message) {
+      NSLog(@"Javascript warn: %@", message);
+    };
+    context[@"console"][@"error"] = ^(NSString *message) {
+      NSLog(@"Javascript error: %@", message);
+    };
+    context[@"console"][@"info"] = ^(NSString *message) {
+      NSLog(@"Javascript info: %@", message);
+    };
+    context[@"console"][@"debug"] = ^(NSString *message) {
+      NSLog(@"Javascript debug: %@", message);
+    };
+
 
     Worker *w = [[Worker alloc] init];
     [w setWorkerId: workerId];
