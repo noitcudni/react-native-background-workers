@@ -111,6 +111,13 @@ RCT_EXPORT_METHOD(postWorkerMessage:(NSString *)workerId message:(NSString *)mes
   JSContext *context = [w context];
 
   JSValue *onmessageFunc = [context evaluateScript:[NSString stringWithFormat:@"require(%@)['default']", moduleIdStr]];
+  if([onmessageFunc isUndefined]){
+    onmessageFunc = [context evaluateScript:@"onmessage"];
+  }
+
+  if([onmessageFunc isUndefined]) {
+    NSLog(@"onmessageFunc is not defined for worker %@", workerId);
+  }
   [onmessageFunc callWithArguments:@[message]];
 }
 

@@ -16,7 +16,7 @@ export default class Worker
       .then(id => {
         const moduleEvt = new NativeEventEmitter(WorkerManager);
         moduleEvt.addListener(id, (message) => {
-          console.log("main js thread: ", message); //xxx
+          console.log("main js thread: eventlistner: ", message);
           !!message && this.onmessage && this.onmessage(message);
         });
         return id;
@@ -31,6 +31,6 @@ export default class Worker
   }
 
   terminate() {
-    this.id.then(WorkerManager.stopWorker);
+    this.id.then(id => WorkerManager.stopWorker(id));
   }
 }
