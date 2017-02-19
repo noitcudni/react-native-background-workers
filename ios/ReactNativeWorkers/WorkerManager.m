@@ -33,7 +33,7 @@ RCT_REMAP_METHOD(initJsContext,
     };
 
     // Redirect console.log, console.warn, and console.error statements to xcode
-    [context evaluateScript:@"var console = {}"];
+    //[context evaluateScript:@"var console = {}"];
     context[@"console"][@"log"] = ^(NSString *message) {
         NSLog(@"Javascript log: %@", message);
     };
@@ -50,6 +50,13 @@ RCT_REMAP_METHOD(initJsContext,
       NSLog(@"Javascript debug: %@", message);
     };
 
+    // Add setTimeout
+    // WTF? javascript core doesn't come with setTimeout?
+    context[@"setTimeout"] = ^(JSValue* function, JSValue* timeout) {
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)([timeout toInt32] * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+          [function callWithArguments:@[]];
+        });
+    };
 
     Worker *w = [[Worker alloc] init];
     [w setWorkerId: workerId];
@@ -139,10 +146,6 @@ RCT_EXPORT_METHOD(postWorkerMessage:(NSString *)workerId message:(NSString *)mes
   workers = nil;
 }
 
-- (dispatch_queue_t)methodQueue
-{
-  return dispatch_queue_create("com.swingeducation.worker", DISPATCH_QUEUE_SERIAL);
-}
 
 - (NSArray<NSString*> *) supportedEvents {
   return [workers allKeys];
