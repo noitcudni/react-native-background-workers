@@ -8,6 +8,7 @@
 
 @implementation WorkerManager
 
+static dispatch_queue_t workerDispatchQueue;
 static NSMutableDictionary *workers;
 static NSMutableArray *preallocatedWorkerIds;
 
@@ -25,11 +26,13 @@ RCT_REMAP_METHOD(initJsContext,
     NSString *workerId = [[NSUUID UUID] UUIDString];
 
     JSContext *context = [[JSContext alloc] initWithVirtualMachine:[[JSVirtualMachine alloc] init]];
-
+    
     // setup callback from js->objective c
     context[@"postMessage"] = ^(NSString *message) {
-        NSLog(@"main js got a message from js : %@", message);
-        [self sendEventWithName:workerId body:message];
+        dispatch_async(workerDispatchQueue, ^{
+            NSLog(@"main js got a message from js : %@", message);
+            [self sendEventWithName:workerId body:message];
+        });
     };
 
     // Redirect console.log, console.warn, and console.error statements to xcode
@@ -53,10 +56,11 @@ RCT_REMAP_METHOD(initJsContext,
     // Add setTimeout
     // WTF? javascript core doesn't come with setTimeout?
     context[@"setTimeout"] = ^(JSValue* function, JSValue* timeout) {
-      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)([timeout toInt32] * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
-          [function callWithArguments:@[]];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)([timeout toInt32] * NSEC_PER_MSEC)), workerDispatchQueue, ^{
+            [function callWithArguments:@[]];
         });
     };
+
 
     Worker *w = [[Worker alloc] init];
     [w setWorkerId: workerId];
@@ -125,7 +129,10 @@ RCT_EXPORT_METHOD(postWorkerMessage:(NSString *)workerId message:(NSString *)mes
   if([onmessageFunc isUndefined]) {
     NSLog(@"onmessageFunc is not defined for worker %@", workerId);
   }
-  [onmessageFunc callWithArguments:@[message]];
+    
+  dispatch_async(workerDispatchQueue, ^{
+    [onmessageFunc callWithArguments:@[message]];
+  });
 }
 
 - (NSString*) getModuleId: (NSString*) jsBundleStr {
@@ -135,6 +142,12 @@ RCT_EXPORT_METHOD(postWorkerMessage:(NSString *)workerId message:(NSString *)mes
   NSRange group1 = [matches[0] rangeAtIndex: 1];
   NSString *moduleIdStr = [jsBundleStr substringWithRange:group1];
   return moduleIdStr;
+}
+
+- (dispatch_queue_t)methodQueue
+{
+    workerDispatchQueue = dispatch_queue_create("com.swingeducation.WorkerQueue", DISPATCH_QUEUE_SERIAL);
+    return workerDispatchQueue;
 }
 
 - (void)invalidate {
