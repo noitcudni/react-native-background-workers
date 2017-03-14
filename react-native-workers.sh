@@ -78,7 +78,7 @@ do
   ENTRY_FILE_BASENAME=$(basename $ENTRY_FILE | cut -d. -f1)
   BUNDLE_FILE="$DEST/$ENTRY_FILE_BASENAME.jsbundle"
 
-  $NODE_BINARY "$REACT_NATIVE_DIR/local-cli/cli.js" bundle \
+  $NODE_BINARY --max-old-space-size=4096 "$REACT_NATIVE_DIR/local-cli/cli.js" bundle \
     --entry-file "$ENTRY_FILE" \
     --platform ios \
     --dev $DEV \
